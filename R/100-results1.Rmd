@@ -1,0 +1,212 @@
+```{r}
+rm(list = setdiff(ls(), lsf.str())[!(setdiff(ls(), lsf.str()) %in% "params")])
+source(here::here("R", "002-folder_paths_and_options.R"))
+
+# It's input is the following R objects:
+
+adni_lan_recoded <- readRDS(file=path(r_objects_folder, "025_adni_lan_recoded.rds"))  
+adni_lan_recoded_quantile <- readRDS(file=path(r_objects_folder, "025_adni_lan_recoded_quantile.rds"))
+```
+
+
+```{r}
+
+scatterplot_stratified <- function(df, x, y, strat, mytitle) {
+    ggplot(data = df, aes(x = {{ x }}, y = {{ y }}, color = {{strat}})) +
+      geom_point(position = "jitter", alpha = .5) +
+      geom_smooth(se=FALSE, method = "lm", color = "blue") +
+      hrbrthemes::theme_ipsum() +
+      scale_color_manual("Quartile", values = c("#e41a1c", "#377eb8", "#4daf4a", "#984ea3")) +
+      ggtitle(mytitle) 
+      
+}
+
+histogram <- function(df, x, mytitle) {
+  ggplot(data = df, aes(x = {{ x }})) +
+    geom_histogram() +
+    hrbrthemes::theme_ipsum() +
+    ggtitle(mytitle) 
+}
+
+summary_table_of_change <- function(df, x, mytitle) {
+  nlevels <- df %>%
+    distinct({{ x }}) %>%
+    count()
+  
+  if (nlevels >30) {
+    foo <- df %>%
+      mutate(x_bins = cut({{ x }}, breaks = 30 ))
+  } else {
+    foo <- df %>%
+      mutate(x_bins = {{ x }})
+  }
+  foo %>%
+  group_by(x_bins) %>%
+  count() %>%
+  ungroup() %>%
+  gt(rowname_col = "x_bins") %>%
+  summary_rows(columns = vars(n),
+               fns = list(Total = ~sum(.)),
+               formatter = fmt_number,
+               decimals = 0) %>%
+  tab_header(mytitle)
+}
+
+
+```
+
+# Descriptive plots and tables of the language subdomains
+
+## Animal naming (raw score)
+
+```{r, out.width = '85%'}
+histogram(adni_lan_recoded_quantile, 
+          x = animalsc_raw_change,
+          mytitle = "Change in Animal (raw score)")
+
+summary_table_of_change(adni_lan_recoded_quantile, 
+                        x = animalsc_raw_change,
+                        mytitle = "Summary table of change in Animal (raw score)")
+
+scatterplot_stratified(adni_lan_recoded_quantile, 
+  x = animalsc_raw0, 
+  y = animalsc_raw6, 
+  strat = animalsc_raw_change_quantile,
+  mytitle = "Animal (raw score) M6 vs Animal (raw score) M0")
+
+
+scatterplot_stratified(adni_lan_recoded_quantile, 
+  x = animalsc_raw0, 
+  y = animalsc_raw_change, 
+  strat = animalsc_raw_change_quantile,
+  mytitle = "Change in Animal (raw score) vs Animal (raw score) M0")
+
+
+```
+
+## Animal naming (categorical score)
+
+```{r, out.width = '85%'}
+histogram(adni_lan_recoded_quantile, 
+          x = animalsc_cat_change,
+          mytitle = "Change in Animal (cat score)")
+
+summary_table_of_change(adni_lan_recoded_quantile, 
+                        x = animalsc_cat_change,
+                        mytitle = "Summary table of change in Animal (cat score)")
+
+scatterplot_stratified(adni_lan_recoded_quantile, 
+  x = animalsc_cat0, 
+  y = animalsc_cat6, 
+  strat = animalsc_cat_change_quantile,
+  mytitle = "Animal (cat score) M6 vs Animal (cat score) M0")
+
+scatterplot_stratified(adni_lan_recoded_quantile, 
+  x = animalsc_cat0, 
+  y = animalsc_cat_change, 
+  strat = animalsc_cat_change_quantile,
+  mytitle = "Change in Animal (cat score) vs Animal (cat score) M0")
+
+```
+
+## F fluency (raw score)
+
+```{r, out.width = '85%'}
+histogram(adni_lan_recoded_quantile, 
+          x = ffluency_raw_change,
+          mytitle = "Change in F fluency (raw score)")
+
+summary_table_of_change(adni_lan_recoded_quantile, 
+                        x = ffluency_raw_change,
+                        mytitle = "Summary table of change in F fluency (raw score)")
+
+scatterplot_stratified(adni_lan_recoded_quantile, 
+  x = ffluency_raw0, 
+  y = ffluency_raw6, 
+  strat = ffluency_raw_change_quantile,
+  mytitle = "F fluency (raw score) M6 vs F fluency (raw score) M0")
+
+scatterplot_stratified(adni_lan_recoded_quantile, 
+  x = ffluency_raw0, 
+  y = ffluency_raw_change, 
+  strat = ffluency_raw_change_quantile,
+  mytitle = "Change in F fluency (raw score) vs F fluency (raw score) M0")
+
+```
+
+## F fluency (cat score)
+
+```{r, out.width = '85%'}
+histogram(adni_lan_recoded_quantile, 
+          x = ffluency_cat_change,
+          mytitle = "Change in F fluency (cat score)")
+
+summary_table_of_change(adni_lan_recoded_quantile, 
+                        x = ffluency_cat_change,
+                        mytitle = "Summary table of change in F fluency (cat score)")
+
+scatterplot_stratified(adni_lan_recoded_quantile, 
+  x = ffluency_cat0, 
+  y = ffluency_cat_change, 
+  strat = ffluency_cat_change_quantile,
+  mytitle = "F fluency (cat score) M6 vs F fluency (cat score) M0")
+
+scatterplot_stratified(adni_lan_recoded_quantile, 
+  x = ffluency_cat0, 
+  y = ffluency_cat6, 
+  strat = ffluency_cat_change_quantile,
+  mytitle = "Change in F fluency (cat score) vs F fluency (cat score) M0")
+
+```
+
+## Confrontational naming
+
+```{r, out.width = '85%'}
+histogram(adni_lan_recoded_quantile, 
+          x = confront_change,
+          mytitle = "Change in confrontational naming")
+
+summary_table_of_change(adni_lan_recoded_quantile, 
+                        x = confront_change,
+                        mytitle = "Summary table of Change in confrontational naming")
+
+scatterplot_stratified(adni_lan_recoded_quantile, 
+  x = confront0, 
+  y = confront6, 
+  strat = confront_change_quantile,
+  mytitle = "Confrontational naming M6 vs Confrontational naming M0")
+
+scatterplot_stratified(adni_lan_recoded_quantile, 
+  x = confront0, 
+  y = confront_change, 
+  strat = confront_change_quantile,
+  mytitle = "Change in confrontational naming vs Confrontational naming M0")
+
+```
+
+## Other language items
+
+```{r, out.width = '85%'}
+histogram(adni_lan_recoded_quantile, 
+          x = others_change,
+          mytitle = "Change in other language items")
+
+summary_table_of_change(adni_lan_recoded_quantile, 
+                        x = others_change,
+                        mytitle = "Summary table of Change in other language items")
+
+scatterplot_stratified(adni_lan_recoded_quantile, 
+  x = others0, 
+  y = others6, 
+  strat = others_change_quantile,
+  mytitle = "Other language items M6 vs Other language items M0")
+
+scatterplot_stratified(adni_lan_recoded_quantile, 
+  x = others0, 
+  y = others_change, 
+  strat = others_change_quantile,
+  mytitle = "Change in other language items vs Other language items M0")
+
+```
+
+

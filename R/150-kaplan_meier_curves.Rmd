@@ -1,0 +1,179 @@
+
+```{r}
+rm(list = setdiff(ls(), lsf.str())[!(setdiff(ls(), lsf.str()) %in% "params")])
+source(here::here("R", "002-folder_paths_and_options.R"))
+
+# It's input is the following R objects:
+adni.survival.cn.mci <- readRDS(file=path(r_objects_folder, "025_adni_survival_cn_mci.rds"))
+adni.survival.mci <- readRDS(file=path(r_objects_folder, "025_adni_survival_mci.rds"))
+```
+
+# Time to event analyses
+
+This section examines the time to conversion for participants with MCI to AD.
+
+
+```{r}
+
+my_kaplanmeier <- function(x, df, mytitle, mylabels=NULL) {
+
+  
+  ggsurvplot(x, data = df,
+           risk.table = FALSE,
+           break.time.by = 1, 
+           xlab = "Time from baseline (Years)",
+           palette = c("#e41a1c", "#377eb8", "#4daf4a", "#984ea3", 
+                       "#ff7f00", "#ffff33", "#a65628", "#f781bf"),
+           ggtheme = hrbrthemes::theme_ipsum(),
+           legend = "right",
+           legend.labs = mylabels) +
+  labs(title = mytitle)
+}
+```
+
+
+
+## From MCI at baseline to AD
+
+### Kaplan Meier curves
+
+Kaplan Meier curves stratified by the quantiled change in test scores.
+
+
+#### Individual language subdomains
+
+Kaplan Meier curves of the retest improvement in individual language subdomains.
+
+```{r}
+my_surv_object_mci <- with(adni.survival.mci, Surv(time_in_adni, event))
+x_mci <- survfit(my_surv_object_mci ~ animalsc_raw_change_quantile, data = adni.survival.mci)
+my_kaplanmeier(x_mci, adni.survival.mci,
+               mylabels = c("1 (best)", "2", "3", "4 (worst)"),
+               mytitle = "Conversion from baseline MCI to AD by \n Animal raw score retest quantiled") 
+
+x_mci <- survfit(my_surv_object_mci ~ animalsc_cat_change_quantile , 
+             data = adni.survival.mci)
+my_kaplanmeier(x_mci, adni.survival.mci,
+               mylabels = c("1 (best)", "2", "3", "4 (worst)"),
+               mytitle = "Conversion from baseline MCI to AD by \n Animal categorical score retest quantiled") 
+
+x_mci <- survfit(my_surv_object_mci ~ ffluency_raw_change_quantile, data = adni.survival.mci)
+my_kaplanmeier(x_mci, adni.survival.mci,
+               mylabels = c("1 (best)", "2", "3", "4 (worst)"),
+               mytitle = "Conversion from baseline MCI to AD by \n F fluency raw score retest quantiled") 
+
+x_mci <- survfit(my_surv_object_mci ~ ffluency_cat_change_quantile, data = adni.survival.mci)
+my_kaplanmeier(x_mci, adni.survival.mci,
+               mylabels = c("1 (best)", "2", "3", "4 (worst)"),
+               mytitle = "Conversion from baseline MCI to AD by \n F fluency categorical score retest quantiled") 
+
+x_mci <- survfit(my_surv_object_mci ~ confront_change_quantile, data = adni.survival.mci)
+my_kaplanmeier(x_mci, adni.survival.mci,
+               mylabels = c("1 (best)", "2", "3", "4 (worst)"),
+               mytitle = "Conversion from baseline MCI to AD by \n Confrontational retest quantiled") 
+
+x_mci <- survfit(my_surv_object_mci ~ others_change_quantile, data = adni.survival.mci)
+my_kaplanmeier(x_mci, adni.survival.mci,
+               mylabels = c("1 (best)", "2", "3", "4 (worst)"),
+               mytitle = "Conversion from baseline MCI to AD by \n Other language items retest quantiled") 
+
+```
+
+
+<p class="my-pagebreak"></p>
+
+### Cox proportional hazards models
+
+The reference group in the models is the first (best) quantile.
+
+```{r}
+
+fit.coxph.animal_raw.mci <- coxph(my_surv_object_mci ~ anim_raw_q2 + anim_raw_q3 + anim_raw_q4, 
+                       data = adni.survival.mci)
+fit.coxph.animal_cat.mci <- coxph(my_surv_object_mci ~ anim_cat_q2 + anim_cat_q3 + anim_cat_q4, 
+                       data = adni.survival.mci)
+fit.coxph.f_raw.mci <- coxph(my_surv_object_mci ~ f_raw_q2 + f_raw_q3 + f_raw_q4, 
+                       data = adni.survival.mci)
+fit.coxph.f_cat.mci <- coxph(my_surv_object_mci ~ f_cat_q2 + f_cat_q3 + f_cat_q4, 
+                       data = adni.survival.mci)
+fit.coxph.confront.mci <- coxph(my_surv_object_mci ~ confront_q2 + confront_q3 + confront_q4, 
+                       data = adni.survival.mci)
+fit.coxph.others.mci <- coxph(my_surv_object_mci ~ others_q2 + others_q3 + others_q4, 
+                       data = adni.survival.mci)
+```
+
+
+```{r}
+tidy(fit.coxph.animal_raw.mci, exp = TRUE) %>%
+  select(term, estimate, p.value) %>%
+  kable(caption = "Cox proportional hazards model (Baseline MCI) - Animal fluency (raw score) Quartiles",
+        digits = c(0, 2, 3),
+        col.names = c("Predictor", "HR", "P-value")) %>%
+  kable_styling(bootstrap_options = kable.styling.bootstrap.option,
+                full_width = F, position = kable.styling.position.option) %>%
+  column_spec(1, width = "6em") %>%
+  column_spec(2, width = "5em") %>%
+  column_spec(3, width = "6em") %>%
+  row_spec(0, align = "c")
+
+tidy(fit.coxph.animal_cat.mci, exp = TRUE) %>%
+  select(term, estimate, p.value) %>%
+  kable(caption = "Cox proportional hazards model (Baseline MCI) - Animal fluency (categorical score) Quartiles",
+        digits = c(0, 2, 3),
+        col.names = c("Predictor", "HR", "P-value")) %>%
+  kable_styling(bootstrap_options = kable.styling.bootstrap.option,
+                full_width = F, position = kable.styling.position.option) %>%
+  column_spec(1, width = "6em") %>%
+  column_spec(2, width = "5em") %>%
+  column_spec(3, width = "6em") %>%
+  row_spec(0, align = "c")
+
+tidy(fit.coxph.f_raw.mci, exp = TRUE) %>%
+  select(term, estimate, p.value) %>%
+  kable(caption = "Cox proportional hazards model (Baseline MCI) - F fluency (raw score) Quartiles",
+        digits = c(0, 2, 3),
+        col.names = c("Predictor", "HR", "P-value")) %>%
+  kable_styling(bootstrap_options = kable.styling.bootstrap.option,
+                full_width = F, position = kable.styling.position.option) %>%
+  column_spec(1, width = "6em") %>%
+  column_spec(2, width = "5em") %>%
+  column_spec(3, width = "6em" )%>%
+  row_spec(0, align = "c")
+
+tidy(fit.coxph.f_cat.mci, exp = TRUE) %>%
+  select(term, estimate, p.value) %>%
+  kable(caption = "Cox proportional hazards model (Baseline MCI) - F fluency (categorical score) Quartiles",
+        digits = c(0, 2, 3),
+        col.names = c("Predictor", "HR", "P-value")) %>%
+  kable_styling(bootstrap_options = kable.styling.bootstrap.option,
+                full_width = F, position = kable.styling.position.option) %>%
+  column_spec(1, width = "6em") %>%
+  column_spec(2, width = "5em") %>%
+  column_spec(3, width = "6em") %>%
+  row_spec(0, align = "c")
+
+tidy(fit.coxph.confront.mci, exp = TRUE) %>%
+  select(term, estimate, p.value) %>%
+  kable(caption = "Cox proportional hazards model (Baseline MCI) - Confrontational Quartiles",
+        digits = c(0, 2, 3),
+        col.names = c("Predictor", "HR", "P-value")) %>%
+  kable_styling(bootstrap_options = kable.styling.bootstrap.option,
+                full_width = F, position = kable.styling.position.option) %>%
+  column_spec(1, width = "6em") %>%
+  column_spec(2, width = "5em") %>%
+  column_spec(3, width = "6em") %>%
+  row_spec(0, align = "c")
+
+tidy(fit.coxph.others.mci, exp = TRUE) %>%
+  select(term, estimate, p.value) %>%
+  kable(caption = "Cox proportional hazards model (Baseline MCI) - Other language items Quartiles",
+        digits = c(0, 2, 3),
+        col.names = c("Predictor", "HR", "P-value")) %>%
+  kable_styling(bootstrap_options = kable.styling.bootstrap.option,
+                full_width = F, position = kable.styling.position.option) %>%
+  column_spec(1, width = "6em") %>%
+  column_spec(2, width = "5em") %>%
+  column_spec(3, width = "6em") %>%
+  row_spec(0, align = "c")
+```
+

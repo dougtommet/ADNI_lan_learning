@@ -1,0 +1,12 @@
+
+# R technical details 
+
+Details about the R session used to create this report.
+
+
+```{r, results = 'asis', tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+
+sessionInfo()
+
+```
+

@@ -1,0 +1,54 @@
+---
+title: "ADNI Pychometrics: <br> Learning Effects across Language subdomains"
+author: "Doug Tommet"
+date: '`r Sys.Date()`'
+output:
+  html_document:
+    keep_md: yes
+    toc: yes
+    toc_float: yes
+  
+---
+
+
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+source(here::here("r", "005-functions_and_libraries.r"))
+source(here::here("r", "002-folder_paths_and_options.r"))
+
+source(here::here("r", "010-read_data.r"))
+
+source(here::here("r", "020-filter_data.r"))
+source(here::here("r", "025-transform_data.r"))
+source(here::here("r", "155-time-to-event-comparisons.r"))
+```
+
+
+
+```{r, child="001-opening_statement.Rmd"}
+```
+
+```{r, child="010-read_data.Rmd", eval=FALSE}
+```
+
+
+```{r, child="020-filter_data.Rmd", eval=FALSE}
+```
+
+```{r, child="025-transform_data.Rmd", eval=FALSE}
+```
+
+```{r, child="100-results1.Rmd"}
+```
+
+
+```{r, child="150-kaplan_meier_curves.Rmd"}
+```
+
+```{r, child="155-time-to-event-comparisons.Rmd"}
+```
+
+
+```{r, child="999-R_session_info.Rmd"}
+```

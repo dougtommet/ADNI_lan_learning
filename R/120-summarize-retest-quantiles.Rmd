@@ -1,0 +1,146 @@
+```{r}
+rm(list = setdiff(ls(), lsf.str())[!(setdiff(ls(), lsf.str()) %in% "params")])
+source(here::here("R", "002-folder_paths_and_options.R"))
+
+# It's input is the following R objects:
+adni.recoded <- readRDS(file=path(r_objects_folder, "025_adni_recoded.rds"))
+adni.quantiles <- readRDS(file=path(r_objects_folder, "025_adni_quantiles.rds"))
+```
+
+
+# Summary of quantiled retest scores
+
+This sections summarized the retest scores split into four quantiles.
+
+Higher quantile scores reflect a lower score at follow-up than baseline (or a smaller gain from baseline to follow-up). Lower quantile scores reflects a larger score at follow-up than baseline.  Only "Normal" and "MCI" subjects are used in this analysis.
+
+## Correlation between the retest quantiles
+
+```{r}
+
+adni.quantiles %>%
+  select(contains("quantile")) %>%
+  select(-contains("group")) %>%
+  mutate_all(as.numeric) %>%
+  corrr::correlate(method = "spearman", diagonal = 1) %>%
+  corrr::shave(upper = TRUE) %>%
+  corrr::fashion() %>% 
+  mutate_at(vars(contains("quantile")), as.numeric) %>%
+  kable(caption = "Correlation matrix of quantiled change scores",
+        col.names = c("Domain", "ef_quantile", "mem_quantile", "vsp_quantile", "lang_quantile")) %>%
+  kable_styling(bootstrap_options = kable.styling.bootstrap.option, 
+                full_width = F, position = kable.styling.position.option) %>%
+  column_spec(1, width = "8em") %>%
+  column_spec(2, width = "8em") %>%
+  column_spec(3, width = "8em") %>%
+  column_spec(4, width = "8em") %>%
+  column_spec(5, width = "8em") %>%
+  row_spec(0, align = "c")
+
+
+```
+
+## Tables of quantile domain by quantiled domain
+
+```{r}
+
+my_quantile_table <- function(df, x, y, xlab, ylab, myheader) {
+  options(knitr.kable.NA = 'NA')
+  df %>%
+  select({{ x }}, {{ y }}) %>%
+  group_by({{ x }}, {{ y }}) %>%
+  count() %>%
+  spread(key = {{ y }}, value = n) %>%
+  kable(caption = str_c(xlab, " vs ", ylab),
+        col.names = c(xlab, "1 (best)", "2", "3", "4 (worst)")) %>%
+  kable_styling(bootstrap_options = kable.styling.bootstrap.option,
+                full_width = F, position = kable.styling.position.option) %>%
+  add_header_above(myheader) %>%
+    column_spec(1, width = "12em") %>%
+    column_spec(2, width = "6em") %>%
+    column_spec(3, width = "6em") %>%
+    column_spec(4, width = "6em") %>%
+    column_spec(5, width = "6em") %>%
+  row_spec(0, align = "c")
+}
+```
+
+```{r}
+my_quantile_table(adni.quantiles, mem_quantile, ef_quantile, 
+                  "Memory", "Executive Function", 
+                  c(" " = 1, "Executive Function" = 4))
+```
+
+```{r}
+my_quantile_table(adni.quantiles, mem_quantile, lang_quantile, 
+                  "Memory", "Language", 
+                  c(" " = 1, "Language" = 4))
+```
+
+<p class="my-pagebreak"></p>
+
+```{r}
+my_quantile_table(adni.quantiles, mem_quantile, vsp_quantile, 
+                  "Memory", "Visualspatial", 
+                  c(" " = 1, "Visualspatial" = 4))
+```
+
+```{r}
+my_quantile_table(adni.quantiles, ef_quantile, lang_quantile, 
+                  "Executive Function", "Lanugage", 
+                  c(" " = 1, "Language" = 4))
+```
+
+```{r}
+my_quantile_table(adni.quantiles, ef_quantile, vsp_quantile, 
+                  "Executive Function", "Visualspatial", 
+                  c(" " = 1, "Visualspatial" = 4))
+```
+
+```{r}
+my_quantile_table(adni.quantiles, lang_quantile, vsp_quantile, 
+                  "Language", "Visualspatial", 
+                  c(" " = 1, "Visualspatial" = 4))
+```
+
+<p class="my-pagebreak"></p>
+
+## Summary of subjects in highest retest quantile
+
+The subjects are combined across quantile retest domains, counting how often they were in the highest quantile.
+
+```{r}
+adni.quantiles %>%
+  count(quantile_group_collapsed) %>%
+  mutate(p = 100*n/sum(n)) %>%
+  kable(caption = "Summary of subjects in highest quantile",
+        col.names = c("Retest impaired domain", "N", "%"),
+        digits = c(0, 0, 1)) %>%
+  kable_styling(bootstrap_options = kable.styling.bootstrap.option,
+                full_width = F, position = kable.styling.position.option) %>%
+  column_spec(2, width = "6em") %>%
+  column_spec(3, width = "6em") %>%
+  row_spec(0, align = "c")
+
+
+
+adni.quantiles %>%
+  count(bl_dx, quantile_group_collapsed) %>%
+  spread(key = bl_dx, value = n) %>%
+  mutate(p1 = 100*`1`/sum(`1`),
+         p2 = 100*`2`/sum(`2`)) %>%
+  select(quantile_group_collapsed, `1`, p1, `2`, p2) %>%
+  kable(caption = "Summary of subjects in highest quantile by diagnosis",
+        col.names = c("Retest impaired domain", "N", "%", "N", "%"),
+        digits = c(0, 0, 1, 0, 1)) %>%
+  kable_styling(bootstrap_options = kable.styling.bootstrap.option,
+                full_width = F, position = kable.styling.position.option) %>%
+  add_header_above(c(" " = 1, "Normal" = 2, "MCI" = 2)) %>%
+  column_spec(2, width = "6em") %>%
+  column_spec(3, width = "5em") %>%
+  column_spec(4, width = "5em") %>%
+  column_spec(5, width = "5em") %>%
+  row_spec(0, align = "c")
+
+```
+
