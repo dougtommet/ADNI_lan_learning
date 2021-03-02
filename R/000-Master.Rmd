@@ -21,6 +21,7 @@ source(here::here("r", "010-read_data.r"))
 
 source(here::here("r", "020-filter_data.r"))
 source(here::here("r", "025-transform_data.r"))
+source(here::here("r", "030-transform-time-to-event-data.r"))
 source(here::here("r", "155-time-to-event-comparisons.r"))
 ```
 
@@ -29,17 +30,17 @@ source(here::here("r", "155-time-to-event-comparisons.r"))
 ```{r, child="001-opening_statement.Rmd"}
 ```
 
-```{r, child="010-read_data.Rmd", eval=FALSE}
+```{r, child="010-read_data.Rmd"}
 ```
 
 
 ```{r, child="020-filter_data.Rmd", eval=FALSE}
 ```
 
-```{r, child="025-transform_data.Rmd", eval=FALSE}
+```{r, child="025-transform_data.Rmd"}
 ```
 
-```{r, child="100-results1.Rmd"}
+```{r, child="100-results1.Rmd", eval=FALSE}
 ```
 
 

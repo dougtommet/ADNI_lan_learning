@@ -1,7 +1,113 @@
 
 # Objective
 
-To examine aspects of practice/learning effects in the subdomains of language as a risk factor for AD conversion.  
+This set of analyses is to extend the previous work of examining the effect practice/retest of four cognitive domains on the conversion of MCI to AD.  Since the language domain was the one that showed the greatest effect on coversion, that will be the focus of these analyses by separating the language domain into its component parts.  Nancy Foldi provides rationale/hypotheses below.
+
+
+## Hypothesis from Foldi
+
+*Note: The following sections are taken from LANGUAGE Hypotheses 10.01.2020 ML.LR.NSF.docx. There are more sections to the document, but I only copied those relevant to the current analysis.*
+
+The lowest quartile on change of ADNI-LAN was at greatest risk of conversion to AD. This MCI -> AD conversion prediction raised the issue of why language would be so sensitive compared to other composite scores.  We asked whether the composite score captured a synthesis of all of the linguistic difficulty, or whether certain components of language were driving this, i.e., components of phonology, syntax or semantics.  There is strong support that it is the semantic network that is highly sensitive to decay in AD, although may already be impaired by MCI. Nonetheless, deconstructing the ADNI-LAN measure allows us to focus on those tasks that are tapping the semantic domain. Note that these are not involving syntax or phonology.  The linguistic–semantic skill and it’s interface with memory is intimately linked to hippocampal function. As a result it is particularly susceptible to progression to AD development in at-risk MCI patients. 
+
+As the ADNI-LAN composite score is composed of multiple subtests (see below) which tap other  linguistic domains, we propose to focus on semantic demands. These include tasks of confrontation naming (BNT, MMSE; and ADAS-Cog) and generative verbal fluency (Animal and/or vegetable generation). Note: this does NOT include letter fluency, which is generative, but does not capture the semantic demands. 
+
+### Hypothesis 1.A
+
+We hypothesize that the semantic tasks are driving the prediction to disease conversion and that isolating the source of semantic scores will show that 
+  1. lower quartile, compared to upper quartile, has lower semantic scores compared to upper quartile. 
+  2. lower semantic scores best predict conversion from MCI -> AD.
+	
+### Hypothesis 1.B
+
+The semantic measure contains confrontation naming and word generation. Using these as separate dependent measures, we hypothesize that the generative component will be a more robust predictor than the non-semantic measures as the driving the source of the conversion.
+
+### Hypothesis 1.C 
+
+Women are thought to retain cognitive skill at early stages of disease despite equal pathology as men, suggesting other compensatory strategies; thus there are fewer women than men diagnosed with MCI. By the time AD is diagnosed, there are disproportionately more women than men.  First, we will characterize the NC sample by sex, and hypothesize M>W.  Stratifying the sample by sex, we hypothesize that more women than men MCI will convert to AD. 
+
+Table 1: Nancy’s table separating each of the tasks in order to show more clearly which linguistic demand is being captured in each of the ADNI subtasks. 
+
+For the most part, the tasks focus on the semantic network as is the case in confrontation naming and word generation in a category. Other tasks involve comprehension, repetition and writing. But,
+it’s the naming and generation that really taps what we know to be the most likely area of
+decline in AD, namely the semantic system.
+
+```{r}
+foldi <- tribble(~test, ~production, ~repetition, ~comprehension, ~confrontation_real, ~confrontation_picture, ~word_generation_semantic, ~word_generation_letter, ~reading, ~writing,
+      "Boston Naming Test (BNT)",                  NA, NA, NA, NA, "X", NA, NA, NA, NA,
+      "MMSE (Object naming - pencil, watch)" ,     NA, NA, NA, "X", NA, NA, NA, NA, NA,
+      "MMSE (Repetition - no ifs, ands, or buts)", NA, "X", NA, NA, NA, NA, NA, NA, NA, 
+      "MMSE (3-step command)",                     NA, NA, "X", NA, NA, NA, NA, NA, NA,
+      "MMSE (Write a sentence)",                   NA, NA, NA, NA, NA, NA, NA, NA, "X",
+      "Animal Fluency",                            NA, NA, NA, NA, NA, "X", NA, NA, NA,
+      "Vegetable Fluency",                         NA, NA, NA, NA, NA, "X", NA, NA, NA,
+      "ADAS-Cog (Follow command)",                  NA, NA, "X", NA, NA, NA, NA, NA, NA,
+      "ADAS-Cog (Confrontation naming)",            NA, NA, NA, "X", NA, NA, NA, NA, NA,
+      "ADAS-Cog (Finger naming)",                   NA, NA, NA, NA, NA, NA, NA, NA, NA,
+      "ADAS-Cog (Comprehension to command)",        NA, NA, "X", NA, NA, NA, NA, NA, NA,
+      "MOCA (Confrontation naming - camel, lion, rhino)", NA, NA, NA, NA, "X", NA, NA, NA, NA,
+      "MOCA (Repetition of sentence)",             NA, "X", NA, NA, NA, NA, NA, NA, NA, 
+      "MOCA (Letter fluency - F)",                 NA, NA, NA, NA, NA, NA, "X", NA, NA)
+      
+foldi %>%
+  select(test, confrontation_real, confrontation_picture, word_generation_semantic,
+         word_generation_letter, comprehension, repetition, writing) %>%
+  gt(rowname_col = "test") %>%
+  fmt_missing(
+    columns = everything(),
+    missing_text = ""
+  ) %>%
+  cols_align(
+    align = "center",
+    columns = everything()
+  ) %>%
+  tab_footnote(
+    footnote = "Plus praxis",
+    locations = cells_body(
+      columns = vars(comprehension),
+      rows = 8)
+  ) %>%
+  tab_footnote(
+    footnote = "This task really includes ‘comprehension’ but knowledge of finger and finger names also belong to the Parietal function ( e.g., typical deficit found in Gerstmann Syndrome)",
+    locations = cells_stub(
+      rows = 10)
+  ) %>%
+  tab_footnote(
+    footnote = "You can get the “point” by just having a noun and verb, even though the sentence could be syntactically ‘incorrect’.",
+    locations = cells_stub(
+      rows = 5)
+  ) %>%
+  tab_footnote(
+    footnote = "These questions are really from Boston Diagnostic Aphasia Examination comprehension.",
+    locations = cells_stub(
+      rows = 11)
+  ) %>%
+  tab_spanner(
+    label = "Involves semantic network", 
+    columns = vars(confrontation_real, confrontation_picture, word_generation_semantic)
+  ) %>%
+  tab_spanner(
+    label = "Does not involve semantic network", 
+    columns = vars(word_generation_letter, comprehension, repetition, writing)
+  ) %>%
+  cols_label(repetition = "Repetition",
+             comprehension = "Comprehension",
+             confrontation_real = "Confrontation - Real object",
+             confrontation_picture = "Confrontation - Picture",
+             word_generation_semantic = "Word generation - Semantic cue",
+             word_generation_letter = "Word generation - Letter cue",
+             writing = "Writing")
+
+```
+
+
+Category fluency - Animal naming
+Phonemic fluency - Letter f
+  From MoCA, not in ADNI1
+Confrontation naming - Boston Naming Test, MoCA (lion, camel, rhino), ADAS-Cog (object naming)
+Others - MMSE (repeat phrase, 3-step command, read and follow, write a sentnce), ADAS-Cog (following commands, ideational praxis), MoCA (sentence repetition)
+
+# The data
 
 These analyses use particpants that entered ADNI with MCI.  The outcome is conversion to AD.
 

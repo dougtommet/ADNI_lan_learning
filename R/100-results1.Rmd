@@ -21,52 +21,15 @@ scatterplot_stratified <- function(df, x, y, strat, mytitle) {
       
 }
 
-histogram <- function(df, x, mytitle) {
-  ggplot(data = df, aes(x = {{ x }})) +
-    geom_histogram() +
-    hrbrthemes::theme_ipsum() +
-    ggtitle(mytitle) 
-}
-
-summary_table_of_change <- function(df, x, mytitle) {
-  nlevels <- df %>%
-    distinct({{ x }}) %>%
-    count()
-  
-  if (nlevels >30) {
-    foo <- df %>%
-      mutate(x_bins = cut({{ x }}, breaks = 30 ))
-  } else {
-    foo <- df %>%
-      mutate(x_bins = {{ x }})
-  }
-  foo %>%
-  group_by(x_bins) %>%
-  count() %>%
-  ungroup() %>%
-  gt(rowname_col = "x_bins") %>%
-  summary_rows(columns = vars(n),
-               fns = list(Total = ~sum(.)),
-               formatter = fmt_number,
-               decimals = 0) %>%
-  tab_header(mytitle)
-}
 
 
 ```
 
-# Descriptive plots and tables of the language subdomains
+# Scatterplots of the language subdomains by quartile
 
 ## Animal naming (raw score)
 
 ```{r, out.width = '85%'}
-histogram(adni_lan_recoded_quantile, 
-          x = animalsc_raw_change,
-          mytitle = "Change in Animal (raw score)")
-
-summary_table_of_change(adni_lan_recoded_quantile, 
-                        x = animalsc_raw_change,
-                        mytitle = "Summary table of change in Animal (raw score)")
 
 scatterplot_stratified(adni_lan_recoded_quantile, 
   x = animalsc_raw0, 
@@ -87,13 +50,6 @@ scatterplot_stratified(adni_lan_recoded_quantile,
 ## Animal naming (categorical score)
 
 ```{r, out.width = '85%'}
-histogram(adni_lan_recoded_quantile, 
-          x = animalsc_cat_change,
-          mytitle = "Change in Animal (cat score)")
-
-summary_table_of_change(adni_lan_recoded_quantile, 
-                        x = animalsc_cat_change,
-                        mytitle = "Summary table of change in Animal (cat score)")
 
 scatterplot_stratified(adni_lan_recoded_quantile, 
   x = animalsc_cat0, 
@@ -112,13 +68,6 @@ scatterplot_stratified(adni_lan_recoded_quantile,
 ## F fluency (raw score)
 
 ```{r, out.width = '85%'}
-histogram(adni_lan_recoded_quantile, 
-          x = ffluency_raw_change,
-          mytitle = "Change in F fluency (raw score)")
-
-summary_table_of_change(adni_lan_recoded_quantile, 
-                        x = ffluency_raw_change,
-                        mytitle = "Summary table of change in F fluency (raw score)")
 
 scatterplot_stratified(adni_lan_recoded_quantile, 
   x = ffluency_raw0, 
@@ -137,13 +86,6 @@ scatterplot_stratified(adni_lan_recoded_quantile,
 ## F fluency (cat score)
 
 ```{r, out.width = '85%'}
-histogram(adni_lan_recoded_quantile, 
-          x = ffluency_cat_change,
-          mytitle = "Change in F fluency (cat score)")
-
-summary_table_of_change(adni_lan_recoded_quantile, 
-                        x = ffluency_cat_change,
-                        mytitle = "Summary table of change in F fluency (cat score)")
 
 scatterplot_stratified(adni_lan_recoded_quantile, 
   x = ffluency_cat0, 
@@ -162,13 +104,6 @@ scatterplot_stratified(adni_lan_recoded_quantile,
 ## Confrontational naming
 
 ```{r, out.width = '85%'}
-histogram(adni_lan_recoded_quantile, 
-          x = confront_change,
-          mytitle = "Change in confrontational naming")
-
-summary_table_of_change(adni_lan_recoded_quantile, 
-                        x = confront_change,
-                        mytitle = "Summary table of Change in confrontational naming")
 
 scatterplot_stratified(adni_lan_recoded_quantile, 
   x = confront0, 
@@ -187,13 +122,6 @@ scatterplot_stratified(adni_lan_recoded_quantile,
 ## Other language items
 
 ```{r, out.width = '85%'}
-histogram(adni_lan_recoded_quantile, 
-          x = others_change,
-          mytitle = "Change in other language items")
-
-summary_table_of_change(adni_lan_recoded_quantile, 
-                        x = others_change,
-                        mytitle = "Summary table of Change in other language items")
 
 scatterplot_stratified(adni_lan_recoded_quantile, 
   x = others0, 

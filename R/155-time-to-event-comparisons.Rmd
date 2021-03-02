@@ -4,76 +4,38 @@ rm(list = setdiff(ls(), lsf.str())[!(setdiff(ls(), lsf.str()) %in% "params")])
 source(here::here("R", "002-folder_paths_and_options.R"))
 
 # It's input is the following R objects:
-adni.survival.cn.mci <- readRDS(file=path(r_objects_folder, "025_adni_survival_cn_mci.rds"))
-adni.survival.mci <- readRDS(file=path(r_objects_folder, "025_adni_survival_mci.rds"))
+# adni.survival.cn.mci <- readRDS(file=path(r_objects_folder, "025_adni_survival_cn_mci.rds"))
+adni.survival.mci <- readRDS(file=path(r_objects_folder, "030_adni_survival_mci.rds"))
 
 fitted.cox.models <- readRDS(file=path(r_objects_folder, "155_fitted_cox_models.rds"))  
 
 
 ```
 
-```{r}
-
-make_tidy_df <- function(mod, name) {
-  estimate_name <- quo_name(stringr::str_c("estimate_", name))
-  p.value_name <- quo_name(stringr::str_c("p.value_", name))
-  conf.low_name <- quo_name(stringr::str_c("conf.low_", name))
-  conf.high_name <- quo_name(stringr::str_c("conf.high_", name))
-  
-  broom::tidy(mod, exp = TRUE) %>%
-    select(term, estimate, conf.low, conf.high, p.value) %>%
-    rename(!!estimate_name := estimate) %>%
-    rename(!!p.value_name := p.value) %>%
-    rename(!!conf.low_name := conf.low) %>%
-    rename(!!conf.high_name := conf.high)
-}
-
-make_glance_df <- function(mod, name) {
-  
-  broom::glance(mod) %>%
-    mutate(model = name) %>%
-    select(model, n) 
-}
-
-make_table <- function(df, mytitle) {
-  df %>%
-    kable(caption = mytitle,
-        digits = c(0, rep(c(2, 2, 2, 3), 11)),
-        col.names = c("Predictor", rep(c("HR", "LCI", "UCI", "P-value"), 11))) %>%
-    kable_styling(bootstrap_options = kable.styling.bootstrap.option,
-                  full_width = F, 
-                  position = kable.styling.position.option) %>%
-    add_header_above(c("", "Model 1" = 4, 
-                      "Model 2" = 4, "Model 3" = 4, 
-                      "Model 4" = 4, "Model 5" = 4, 
-                      "Model 6" = 4, "Model 7" = 4, 
-                      "Model 8" = 4, "Model 9" = 4,
-                      "Model 10" = 4, "Model 11" = 4)) %>%
-    add_header_above(c("" , "" , "", "" , "",
-                       "Memory" = 8,
-                       "Executive Function" = 8,
-                       "Language" = 8,
-                       "Visualspatial" = 8,
-                       "All domains" = 8)) %>%
-    row_spec(0, align = "c") %>%
-    add_footnote("Reference category for the retest domains is the first quartile (best retest)") %>%
-    scroll_box(width = "600px")
-}
-
-  
-```
 
 ```{r}
-
+my_pvalue_highlighter <- function(gt, row_highlight, col_highlight, highlight.color, highlight.pvalue) {
+  gt %>%
+    tab_style(
+      style = list(
+        cell_fill(color = highlight.color)
+        ),
+      locations = cells_body(
+        columns = col_highlight,
+        rows = {{row_highlight}} < highlight.pvalue)
+      )
+}
 
 make_hr_table <- function(df, model, biomarker, mytitle, 
                         hr.digits = 2, pvalue.digits = 3,
                         highlight.color = "#FFFFCC", highlight.pvalue = 0.05) {
   
-  row_order_tb <- tibble(term = c(biomarker, "animal_cat_q2", "animal_cat_q3", "animal_cat_q4", 
-                        "animal_raw_q2", "animal_raw_q3", "animal_raw_q4", 
-                        "confront_q2", "confront_q3", "confront_q4", 
-                        "others_q2", "others_q3", "others_q4", 
+  row_order_tb <- tibble(term = c(biomarker,  
+                        "animal_raw_q1", "animal_raw_q3", 
+                        "confront_q1", "confront_q3", 
+                        "bnt_q1", "bnt_q3",
+                        "confront_wo_bnt_q1", "confront_wo_bnt_q3",
+                        "others_q1", "others_q3", 
                         "agebl", "ptsex", "pteducat")) %>%
     mutate(order = 1:length(term))
   
@@ -104,14 +66,7 @@ make_hr_table <- function(df, model, biomarker, mytitle,
      glue("{sprintf('%.*f', hr.digits, round( estimate_biomarker, hr.digits))},
           ({sprintf('%.*f', hr.digits, round( conf.low_biomarker, hr.digits))},
            {sprintf('%.*f', hr.digits, round(conf.high_biomarker, hr.digits))})")),
-           hr_animal_cat_only       = case_when(!is.na(estimate_animal_cat_only) ~
-    glue("{sprintf('%.*f', hr.digits, round( estimate_animal_cat_only, hr.digits))},
-         ({sprintf('%.*f', hr.digits, round( conf.low_animal_cat_only, hr.digits))},
-          {sprintf('%.*f', hr.digits, round(conf.high_animal_cat_only, hr.digits))})")),
-           hr_animal_cat_biomarker = case_when(!is.na(estimate_animal_cat_biomarker) ~
-    glue("{sprintf('%.*f', hr.digits, round( estimate_animal_cat_biomarker, hr.digits))},
-         ({sprintf('%.*f', hr.digits, round( conf.low_animal_cat_biomarker, hr.digits))},
-          {sprintf('%.*f', hr.digits, round(conf.high_animal_cat_biomarker, hr.digits))})")),
+           
            hr_animal_raw_only = case_when(!is.na(estimate_animal_raw_only) ~
     glue("{sprintf('%.*f', hr.digits, round( estimate_animal_raw_only, hr.digits))},
          ({sprintf('%.*f', hr.digits, round( conf.low_animal_raw_only, hr.digits))},
@@ -128,6 +83,24 @@ make_hr_table <- function(df, model, biomarker, mytitle,
     glue("{sprintf('%.*f', hr.digits, round( estimate_confront_biomarker, hr.digits))},
          ({sprintf('%.*f', hr.digits, round( conf.low_confront_biomarker, hr.digits))},
           {sprintf('%.*f', hr.digits, round(conf.high_confront_biomarker, hr.digits))})")), 
+    
+          hr_bnt_only = case_when(!is.na(estimate_bnt_only) ~
+    glue("{sprintf('%.*f', hr.digits, round( estimate_bnt_only, hr.digits))},
+         ({sprintf('%.*f', hr.digits, round( conf.low_bnt_only, hr.digits))},
+          {sprintf('%.*f', hr.digits, round(conf.high_bnt_only, hr.digits))})")),
+           hr_bnt_biomarker = case_when(!is.na(estimate_bnt_biomarker) ~
+    glue("{sprintf('%.*f', hr.digits, round( estimate_bnt_biomarker, hr.digits))},
+         ({sprintf('%.*f', hr.digits, round( conf.low_bnt_biomarker, hr.digits))},
+          {sprintf('%.*f', hr.digits, round(conf.high_bnt_biomarker, hr.digits))})")), 
+    
+          hr_confront_wo_bnt_only = case_when(!is.na(estimate_confront_wo_bnt_only) ~
+    glue("{sprintf('%.*f', hr.digits, round( estimate_confront_wo_bnt_only, hr.digits))},
+         ({sprintf('%.*f', hr.digits, round( conf.low_confront_wo_bnt_only, hr.digits))},
+          {sprintf('%.*f', hr.digits, round(conf.high_confront_wo_bnt_only, hr.digits))})")),
+           hr_confront_wo_bnt_biomarker = case_when(!is.na(estimate_confront_wo_bnt_biomarker) ~
+    glue("{sprintf('%.*f', hr.digits, round( estimate_confront_wo_bnt_biomarker, hr.digits))},
+         ({sprintf('%.*f', hr.digits, round( conf.low_confront_wo_bnt_biomarker, hr.digits))},
+          {sprintf('%.*f', hr.digits, round(conf.high_confront_wo_bnt_biomarker, hr.digits))})")), 
            hr_other_lan_only = case_when(!is.na(estimate_other_lan_only) ~
     glue("{sprintf('%.*f', hr.digits, round( estimate_other_lan_only, hr.digits))},
          ({sprintf('%.*f', hr.digits, round( conf.low_other_lan_only, hr.digits))},
@@ -147,12 +120,16 @@ make_hr_table <- function(df, model, biomarker, mytitle,
     ) %>%
     
     select(term, hr_biomarker, p.value_biomarker,
-           hr_animal_cat_only, p.value_animal_cat_only, 
-           hr_animal_cat_biomarker, p.value_animal_cat_biomarker, 
            hr_animal_raw_only, p.value_animal_raw_only, 
            hr_animal_raw_biomarker, p.value_animal_raw_biomarker, 
            hr_confront_only, p.value_confront_only, 
            hr_confront_biomarker, p.value_confront_biomarker,
+           
+           hr_bnt_only, p.value_bnt_only, 
+           hr_bnt_biomarker, p.value_bnt_biomarker,
+           hr_confront_wo_bnt_only, p.value_confront_wo_bnt_only, 
+           hr_confront_wo_bnt_biomarker, p.value_confront_wo_bnt_biomarker,
+           
            hr_other_lan_only, p.value_other_lan_only, 
            hr_other_biomarker, p.value_other_biomarker, 
            # hr_all_only, p.value_all_only, 
@@ -176,13 +153,9 @@ make_hr_table <- function(df, model, biomarker, mytitle,
                  ) %>%
       tab_header(title = mytitle) %>%
       tab_source_note(
-        source_note = "Reference category for the retest domains is the first quartile (best retest)") %>%
+        source_note = "Reference category for the retest domains is the second (no change) category") %>%
     cols_label(hr_biomarker = "HR (95% CI)",
                p.value_biomarker = "p-value",
-               hr_animal_cat_only = "HR (95% CI)",
-               p.value_animal_cat_only = "p-value",
-               hr_animal_cat_biomarker = "HR (95% CI)",
-               p.value_animal_cat_biomarker = "p-value",
                hr_animal_raw_only = "HR (95% CI)",
                p.value_animal_raw_only = "p-value",
                hr_animal_raw_biomarker = "HR (95% CI)",
@@ -191,6 +164,16 @@ make_hr_table <- function(df, model, biomarker, mytitle,
                p.value_confront_only = "p-value",
                hr_confront_biomarker = "HR (95% CI)",
                p.value_confront_biomarker = "p-value",
+               
+               hr_bnt_only = "HR (95% CI)",
+               p.value_bnt_only = "p-value",
+               hr_bnt_biomarker = "HR (95% CI)",
+               p.value_bnt_biomarker = "p-value",
+               hr_confront_wo_bnt_only = "HR (95% CI)",
+               p.value_confront_wo_bnt_only = "p-value",
+               hr_confront_wo_bnt_biomarker = "HR (95% CI)",
+               p.value_confront_wo_bnt_biomarker = "p-value",
+               
                hr_other_lan_only = "HR (95% CI)",
                p.value_other_lan_only = "p-value",
                hr_other_biomarker = "HR (95% CI)",
@@ -201,109 +184,86 @@ make_hr_table <- function(df, model, biomarker, mytitle,
                # p.value_all_biomarker = "p-value",
                ) %>%
     tab_spanner(label = biomarker, columns = vars(hr_biomarker, p.value_biomarker)) %>%
-    tab_spanner(label = "Animals (categories)", columns = contains("animal_cat_only")) %>%
-    tab_spanner(label = glue::glue("Animal (categories) + {biomarker}"), 
-                columns = contains("animal_cat_biomarker")) %>%
     tab_spanner(label = "Animals (raw scores)", columns = contains("animal_raw_only")) %>%
     tab_spanner(label = glue::glue("Animals (raw scores) + {biomarker}"), 
                 columns = contains("animal_raw_biomarker")) %>%
-    tab_spanner(label = "Confrontational naming", columns = contains("confront_only")) %>%
-    tab_spanner(label = glue::glue("Confrontational naming + {biomarker}"), 
+    tab_spanner(label = "Confrontation naming", columns = contains("confront_only")) %>%
+    tab_spanner(label = glue::glue("Confrontation naming + {biomarker}"), 
                 columns = contains("confront_biomarker")) %>%
+    
+    tab_spanner(label = "Boston Naming Test", columns = contains("bnt_only")) %>%
+    tab_spanner(label = glue::glue("Boston Naming Test + {biomarker}"), 
+                columns = contains("bnt_biomarker")) %>%
+    tab_spanner(label = "Confrontation w/o BNT", columns = contains("confront_wo_bnt_only")) %>%
+    tab_spanner(label = glue::glue("Confrontation w/o BNT + {biomarker}"), 
+                columns = contains("confront_wo_bnt_biomarker")) %>%
+    
     tab_spanner(label = "Other Lang items", columns = contains("other_lan_only")) %>%
     tab_spanner(label = glue::glue("Other Lang items + {biomarker}"), 
                 columns = contains("other_biomarker")) %>%
     # tab_spanner(label = "All domains", columns = contains("all_only")) %>%
     # tab_spanner(label = glue::glue("All domains + {biomarker}"), 
     #             columns = contains("all_biomarker")) %>%
-    tab_style(
-      style = list(
-        cell_fill(color = highlight.color)
-        ),
-      locations = cells_body(
-        columns = vars(hr_biomarker, p.value_biomarker),
-        rows = p.value_biomarker < highlight.pvalue)
-      ) %>%
-    tab_style(
-      style = list(
-        cell_fill(color = highlight.color)
-        ),
-      locations = cells_body(
-        columns = contains("animal_cat_only"),
-        rows = p.value_animal_cat_only < highlight.pvalue)
-      ) %>%
-    tab_style(
-      style = list(
-        cell_fill(color = highlight.color)
-        ),
-      locations = cells_body(
-        columns = contains("animal_cat_biomarker"),
-        rows = p.value_animal_cat_biomarker < highlight.pvalue)
-      ) %>%
-    tab_style(
-      style = list(
-        cell_fill(color = highlight.color)
-        ),
-      locations = cells_body(
-        columns = contains("animal_raw_only"),
-        rows = p.value_animal_raw_only < highlight.pvalue)
-      ) %>%
-    tab_style(
-      style = list(
-        cell_fill(color = highlight.color)
-        ),
-      locations = cells_body(
-        columns = contains("animal_raw_biomarker"),
-        rows = p.value_animal_raw_biomarker < highlight.pvalue)
-      ) %>%
-    tab_style(
-      style = list(
-        cell_fill(color = highlight.color)
-        ),
-      locations = cells_body(
-        columns = contains("confront_only"),
-        rows = p.value_confront_only < highlight.pvalue)
-      ) %>%
-    tab_style(
-      style = list(
-        cell_fill(color = highlight.color)
-        ),
-      locations = cells_body(
-        columns = contains("confront_biomarker"),
-        rows = p.value_confront_biomarker < highlight.pvalue)
-      ) %>%
-    tab_style(
-      style = list(
-        cell_fill(color = highlight.color)
-        ),
-      locations = cells_body(
-        columns = contains("other_lan_only"),
-        rows = p.value_other_lan_only < highlight.pvalue)
-      ) %>%
-    tab_style(
-      style = list(
-        cell_fill(color = highlight.color)
-        ),
-      locations = cells_body(
-        columns = contains("other_biomarker"),
-        rows = p.value_other_biomarker < highlight.pvalue)
-      ) %>%
-    # tab_style(
-    #   style = list(
-    #     cell_fill(color = highlight.color)
-    #     ),
-    #   locations = cells_body(
-    #     columns = contains("all_only"),
-    #     rows = p.value_all_only < highlight.pvalue)
-    #   ) %>%
-    # tab_style(
-    #   style = list(
-    #     cell_fill(color = highlight.color)
-    #     ),
-    #   locations = cells_body(
-    #     columns = contains("all_biomarker"),
-    #     rows = p.value_all_biomarker < highlight.pvalue)
-    #   ) %>%
+    
+    my_pvalue_highlighter(row_highlight = p.value_biomarker, 
+                          col_highlight = vars(hr_biomarker, p.value_biomarker), 
+                          highlight.color = highlight.color,
+                          highlight.pvalue = highlight.pvalue) %>%
+    
+    my_pvalue_highlighter(row_highlight = p.value_animal_raw_only, 
+                          col_highlight = contains("animal_raw_only"), 
+                          highlight.color = highlight.color,
+                          highlight.pvalue = highlight.pvalue) %>%
+    my_pvalue_highlighter(row_highlight = p.value_animal_raw_biomarker, 
+                          col_highlight = contains("animal_raw_biomarker"), 
+                          highlight.color = highlight.color,
+                          highlight.pvalue = highlight.pvalue) %>%
+
+    my_pvalue_highlighter(row_highlight = p.value_confront_only, 
+                          col_highlight = contains("confront_only"), 
+                          highlight.color = highlight.color,
+                          highlight.pvalue = highlight.pvalue) %>%
+    my_pvalue_highlighter(row_highlight = p.value_confront_biomarker, 
+                          col_highlight = contains("confront_biomarker"), 
+                          highlight.color = highlight.color,
+                          highlight.pvalue = highlight.pvalue) %>%
+
+    my_pvalue_highlighter(row_highlight = p.value_bnt_only, 
+                          col_highlight = contains("bnt_only"), 
+                          highlight.color = highlight.color,
+                          highlight.pvalue = highlight.pvalue) %>%
+    my_pvalue_highlighter(row_highlight = p.value_bnt_biomarker, 
+                          col_highlight = contains("bnt_biomarker"), 
+                          highlight.color = highlight.color,
+                          highlight.pvalue = highlight.pvalue) %>%
+    
+    my_pvalue_highlighter(row_highlight = p.value_confront_wo_bnt_only, 
+                          col_highlight = contains("confront_wo_bnt_only"), 
+                          highlight.color = highlight.color,
+                          highlight.pvalue = highlight.pvalue) %>%
+    my_pvalue_highlighter(row_highlight = p.value_confront_wo_bnt_biomarker, 
+                          col_highlight = contains("confront_wo_bnt_biomarker"), 
+                          highlight.color = highlight.color,
+                          highlight.pvalue = highlight.pvalue) %>%
+    my_pvalue_highlighter(row_highlight = p.value_other_lan_only, 
+                          col_highlight = contains("other_lan_only"), 
+                          highlight.color = highlight.color,
+                          highlight.pvalue = highlight.pvalue) %>%
+    my_pvalue_highlighter(row_highlight = p.value_other_biomarker, 
+                          col_highlight = contains("other_biomarker"), 
+                          highlight.color = highlight.color,
+                          highlight.pvalue = highlight.pvalue) %>%
+ 
+    # my_pvalue_highlighter(row_highlight = p.value_all_only, 
+    #                       col_highlight = contains("all_only"), 
+    #                       highlight.color = highlight.color,
+    #                       highlight.pvalue = highlight.pvalue) %>%
+
+    # my_pvalue_highlighter(row_highlight = p.value_all_biomarker, 
+    #                       col_highlight = contains("all_biomarker"), 
+    #                       highlight.color = highlight.color,
+    #                       highlight.pvalue = highlight.pvalue) %>%
+
     tab_row_group(
       group = "Covariates",
       rows = vars(agebl, ptsex, pteducat)
@@ -313,16 +273,20 @@ make_hr_table <- function(df, model, biomarker, mytitle,
       rows = starts_with("other")
     ) %>%
     tab_row_group(
-      group = "Confrontational",
+      group = "Confrontation w/o BNT",
+      rows = starts_with("confront_wo_bnt")
+    ) %>%
+    tab_row_group(
+      group = "Boston Naming Test",
+      rows = starts_with("bnt")
+    ) %>%
+    tab_row_group(
+      group = "Confrontation",
       rows = starts_with("confront")
     ) %>%
     tab_row_group(
       group = "Animals (raw score)",
       rows = starts_with("anim_raw")
-    ) %>%
-    tab_row_group(
-      group = "Animals (categorical)",
-      rows = starts_with("anim_cat")
     ) %>%
     tab_row_group(
       group = "Biomarker",
@@ -364,13 +328,15 @@ make_summary_table <- function(df, model, biomarker, mytitle) {
     mutate(nice.name = 
            case_when(name=="biomarker" ~ glue("{biomarker}"),
                      name=="animal_raw" ~ glue("Animal (raw score)"),
-                     name=="animal_cat" ~ glue("Animal (categorical)"),
-                     name=="confront" ~ glue("Confrontational"),
+                     name=="confront" ~ glue("Confrontation"),
+                     name=="bnt" ~ glue("Boston Naming Test"),
+                     name=="confront_wo_bnt" ~ glue("Confrontation w/o BNT"),
                      name=="other_lan" ~ glue("Other language items"),
                      name=="all" ~ glue("All domains"),
                      name=="animal_raw_biomarker" ~ glue("Animal (raw score) + {biomarker}"),
-                     name=="animal_cat_biomarker" ~ glue("Animal (categorical) + {biomarker}"),
-                     name=="confront_biomarker" ~ glue("Confrontational + {biomarker}"),
+                     name=="confront_biomarker" ~ glue("Confrontation + {biomarker}"),
+                     name=="bnt_biomarker" ~ glue("Boston Naming Test + {biomarker}"),
+                     name=="confront_wo_bnt_biomarker" ~ glue("Confrontation w/o BNT + {biomarker}"),
                      name=="other_biomarker" ~ glue("Other language items + {biomarker}"),
                      name=="all_biomarker" ~ glue("All domains + {biomarker}"))) %>%
     select(-name)
@@ -390,12 +356,16 @@ make_summary_table <- function(df, model, biomarker, mytitle) {
       rows = starts_with("other")
     ) %>%
     tab_row_group(
-      group = "Confrontational",
-      rows = starts_with("confront")
-    ) %>%
+      group = "Confrontation w/o BNT",
+      rows = starts_with("confront_wo_bnt")
+    ) %>%    
     tab_row_group(
-      group = "Animal fluency (categorial)",
-      rows = matches("animal..c")
+      group = "Boston Naming Test",
+      rows = starts_with("bnt")
+    ) %>%    
+    tab_row_group(
+      group = "Confrontation",
+      rows = starts_with("confront")
     ) %>%
     tab_row_group(
       group = "Animal fluency (raw score)",
@@ -448,8 +418,9 @@ Models control for age, sex, and years of education.
 
 Any APOE 4 allele.
 
-
-### MCI to AD
+For reference:
+A HR of 2.56 is equivalent to 0.39.
+A HR of 0.56 is equivalent to 1.78.
 
 ```{r}
 adni.survival.mci %>%
@@ -494,8 +465,9 @@ make_summary_table(fitted.cox.models, glance_mci_apoe, "apoe4",
 
 CSF AD signature from De Meyer (2010)
 
+For reference:
+A HR of 3.33 is equivalent to 0.30.
 
-### MCI to AD
 
 ```{r}
 adni.survival.mci %>%
@@ -541,12 +513,16 @@ make_summary_table(fitted.cox.models, glance_mci_csf, "csf",
 
 The left and right thicknesses are averaged, and then z-scored.  The z-scored used 2*SD in its standardization so that the effects are on the same scale as the cognitive domain quantiles.
 
-### MCI to AD
 
-```{r}
+For reference:
+A HR of 0.31 is equivalent to 3.22.
+A HR of 0.48 is equivalent to 2.08.
+A HR of 1.94 is equivalent to 0.51
+
+```{r, fig.retina=2}
 adni.survival.mci %>%
   ggplot(aes(x = entorhinal_z)) +
-    geom_histogram() +
+    geom_histogram(fill = "blue", color = "blue", alpha = .8) +
     facet_wrap(~event, ncol=1) +
     ggtitle("Entorhinal cortical thickness by conversion status") +
     scale_x_continuous("Standardized Entorinal cortical thickness") +
@@ -568,12 +544,14 @@ make_summary_table(fitted.cox.models, glance_mci_ent, "entorhinal",
 Hippocampal volume from 1.5T MRI (z-scored). The z-scored used 2*SD in its standardization so that the effects are on the same scale as the cognitive domain quantiles.
 
 
-### MCI to AD
+For reference:
+A HR of 0.24 is equivalent to 4.16.
+A HR of 0.41 is equivalent to 2.44.
 
-```{r}
+```{r, fig.retina=2}
 adni.survival.mci %>%
   ggplot(aes(x = hcv_z)) +
-    geom_histogram() +
+    geom_histogram(fill = "blue", color = "blue", alpha = .8) +
     facet_wrap(~event, ncol=1) +
     ggtitle("Hippocampal volume (1.5T) by conversion status") +
     scale_x_continuous("Standardized Hippocampal volume (1.5T)") +

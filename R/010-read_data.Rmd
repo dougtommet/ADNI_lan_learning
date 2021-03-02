@@ -1,0 +1,188 @@
+
+```{r}
+rm(list = setdiff(ls(), lsf.str())[!(setdiff(ls(), lsf.str()) %in% "params")])
+source(here::here("R", "002-folder_paths_and_options.R"))
+
+# It's input is the following R objects:
+
+adni_lan <- readRDS(file=path(r_objects_folder, "010_adni_lan.rds"))  
+
+```
+
+
+To do: standardize hippocampal volume to intracranial volume.
+
+
+```{r}
+
+
+histogram <- function(df, x, mytitle) {
+  nlevels <- df %>%
+    distinct({{ x }}) %>%
+    count()
+  
+  if (nlevels >35) {
+    foo <- df %>%
+      mutate(x_bins = cut({{ x }}, breaks = c(seq(-3, -.01, by = .25), 
+                                              -.01, .01, 
+                                              seq(.01, 3, by = .25)) ))
+    nlevels <- foo %>%
+      distinct(x_bins) %>%
+      count()
+      
+  } else {
+    foo <- df 
+  }
+  
+  ggplot(data = foo, aes(x = {{ x }})) +
+    geom_histogram(bins = nlevels, fill = "blue", color = "blue", alpha = .8) +
+    hrbrthemes::theme_ipsum() +
+    ggtitle(mytitle) 
+}
+
+summary_table_of_change <- function(df, x, mytitle) {
+  nlevels <- df %>%
+    distinct({{ x }}) %>%
+    count()
+  
+  if (nlevels >35) {
+    foo <- df %>%
+      mutate(x_bins = cut({{ x }}, breaks = c(seq(-3, -.01, by = .25), 
+                                              -.01, .01, 
+                                              seq(.01, 3, by = .25)) ))
+  } else {
+    foo <- df %>%
+      mutate(x_bins = {{ x }})
+  }
+  foo %>%
+  group_by(x_bins) %>%
+  count() %>%
+  ungroup() %>%
+  gt(rowname_col = "x_bins") %>%
+  summary_rows(columns = vars(n),
+               fns = list(Total = ~sum(.)),
+               formatter = fmt_number,
+               decimals = 0) %>%
+  tab_header(mytitle)
+}
+
+# adni_lan %>%
+#   select(animalsc_raw_change) %>%
+#   gtsummary::tbl_summary(type = everything() ~ "continuous",
+#                          statistic = all_continuous() ~ "{mean} ({sd})",
+#     digits = animalsc_raw_change ~ 2)
+
+```
+
+# Descriptive statistics of the change in language subdomains
+
+## Animal naming (raw score)
+
+```{r, out.width = '85%'}
+histogram(adni_lan, 
+          x = animalsc_raw_change,
+          mytitle = "Change in Animal (raw score)")
+
+summary_table_of_change(adni_lan, 
+                        x = animalsc_raw_change,
+                        mytitle = "Summary table of change in Animal (raw score)")
+
+
+```
+
+<!-- ## Animal naming (categorical score) -->
+
+<!-- ```{r, out.width = '85%'} -->
+<!-- histogram(adni_lan,  -->
+<!--           x = animalsc_cat_change, -->
+<!--           mytitle = "Change in Animal (cat score)") -->
+
+<!-- summary_table_of_change(adni_lan,  -->
+<!--                         x = animalsc_cat_change, -->
+<!--                         mytitle = "Summary table of change in Animal (cat score)") -->
+
+
+<!-- ``` -->
+
+## F fluency (raw score)
+
+```{r, out.width = '85%'}
+histogram(adni_lan, 
+          x = ffluency_raw_change,
+          mytitle = "Change in F fluency (raw score)")
+
+summary_table_of_change(adni_lan, 
+                        x = ffluency_raw_change,
+                        mytitle = "Summary table of change in F fluency (raw score)")
+
+
+```
+
+<!-- ## F fluency (cat score) -->
+
+<!-- ```{r, out.width = '85%'} -->
+<!-- histogram(adni_lan,  -->
+<!--           x = ffluency_cat_change, -->
+<!--           mytitle = "Change in F fluency (cat score)") -->
+
+<!-- summary_table_of_change(adni_lan,  -->
+<!--                         x = ffluency_cat_change, -->
+<!--                         mytitle = "Summary table of change in F fluency (cat score)") -->
+
+
+<!-- ``` -->
+
+## Confrontation naming
+
+```{r, out.width = '85%'}
+histogram(adni_lan, 
+          x = confront_change,
+          mytitle = "Change in confrontation naming")
+
+summary_table_of_change(adni_lan, 
+                        x = confront_change,
+                        mytitle = "Summary table of Change in confrontation naming")
+
+```
+
+## Other language items
+
+```{r, out.width = '85%'}
+histogram(adni_lan, 
+          x = others_change,
+          mytitle = "Change in other language items")
+
+summary_table_of_change(adni_lan, 
+                        x = others_change,
+                        mytitle = "Summary table of Change in other language items")
+
+
+```
+
+## Boston Naming Test
+
+```{r, out.width = '85%'}
+histogram(adni_lan, 
+          x = bnt_change,
+          mytitle = "Change in Boston Naming Test")
+
+summary_table_of_change(adni_lan, 
+                        x = bnt_change,
+                        mytitle = "Summary table of Change in Boston Naming Test")
+
+
+```
+
+## Confrontation naming without BNT
+
+```{r, out.width = '85%'}
+histogram(adni_lan, 
+          x = confront_wo_bnt_change,
+          mytitle = "Change in confrontation naming w/o BNT")
+
+summary_table_of_change(adni_lan, 
+                        x = confront_wo_bnt_change,
+                        mytitle = "Summary table of Change in confrontation naming w/o BNT")
+
+
+```

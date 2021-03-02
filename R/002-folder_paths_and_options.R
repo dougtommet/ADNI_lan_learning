@@ -1,9 +1,5 @@
 knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
 
-options(knitr.table.format = "html") 
-options(knitr.kable.NA = '')
-kable.styling.bootstrap.option <- c("striped", "hover", "condensed", "responsive")
-kable.styling.position.option <- "left"
 
 set.seed(2017)
 
@@ -17,6 +13,7 @@ here_directory_split <- fs::path_split(here::here())
 up_one_level <- fs::path_join(here_directory_split[[1]][-length(here_directory_split[[1]])])
 r_objects_folder <- fs::path(up_one_level, "R_OBJECTS")
 adni_lan_folder <- fs::path(up_one_level, "ADNI-lan-by-flavor")
+adni_lan_folder2 <- fs::path(up_one_level, "ADNI-lan-bnt-and-confrontation")
 rm(here_directory_split)
 analysisfolder <- here::here("R")
 

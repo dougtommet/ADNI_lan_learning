@@ -80,14 +80,47 @@ adni_others <- THEMATRIXM %>%
   select(-score0, -score6, -t1) %>%
   rename(others_change = diff)
 
+
+load(path(adni_lan_folder2, "7 bnt raw", ".RData"))
+ADNIbnt_wide <- ADNIsub %>%
+  as_tibble() %>%
+  filter(visnum %in% c(0, 6)) %>%
+  mutate(test = str_c("bnt", visnum)) %>%
+  select(rid, test, bnttotal) %>%
+  pivot_wider(id_cols = "rid", names_from = test, values_from = bnttotal)
+adni_bnt <- THEMATRIXM %>%
+  as_tibble() %>%
+  mutate(phase = as.numeric(phase)) %>%
+  left_join(ADNIbnt_wide, by = "rid") %>%
+  select(-score0, -score6, -bnttotal) %>%
+  rename(bnt_change = diff)
+
+load(path(adni_lan_folder2, "9 confrontation wo bnt", ".RData"))
+ADNIconfront_wo_bnt_wide <- ADNI.confront.sub %>%
+  as_tibble() %>%
+  filter(visnum %in% c(0, 6)) %>%
+  mutate(test = str_c("confront_wo_bnt", visnum)) %>%
+  select(rid, test, t1) %>%
+  pivot_wider(id_cols = "rid", names_from = test, values_from = t1)
+adni_confront_wo_bnt <- THEMATRIXM %>%
+  as_tibble() %>%
+  left_join(ADNIconfront_wo_bnt_wide, by = "rid") %>%
+  select(-score0, -score6, -t1) %>%
+  rename(confront_wo_bnt_change = diff)
+
 adni_lan <- adni_animal_raw %>%
   left_join(adni_animal_cat, by = c("rid", "visnum", "phase", "bl_dx", "dxcurren", "bl_dx_factor")) %>%
   left_join(adni_f_raw, by = c("rid", "visnum", "phase", "bl_dx", "dxcurren", "bl_dx_factor")) %>%
   left_join(adni_f_cat, by = c("rid", "visnum", "phase", "bl_dx", "dxcurren", "bl_dx_factor")) %>%
   left_join(adni_confront, by = c("rid", "visnum", "phase", "bl_dx", "dxcurren", "bl_dx_factor")) %>%
   left_join(adni_others, by = c("rid", "visnum", "phase", "bl_dx", "dxcurren", "bl_dx_factor")) %>%
+  left_join(adni_bnt, by = c("rid", "visnum", "phase", "bl_dx", "dxcurren")) %>%
+  left_join(adni_confront_wo_bnt, by = c("rid", "visnum", "phase", "bl_dx", "dxcurren")) %>%
   select(rid, visnum, phase, bl_dx, bl_dx_factor, everything()) %>%
   select(-dxcurren)
+
+adni_lan <- adni_lan %>%
+  filter(bl_dx == 2)
 
 saveRDS(adni_lan,   file=path(r_objects_folder, "010_adni_lan.rds"))
 
